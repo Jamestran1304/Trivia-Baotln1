@@ -1,4 +1,6 @@
 import os
+import sys
+from unicodedata import category
 from flask import Flask, request, abort, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
@@ -11,6 +13,7 @@ QUESTIONS_PER_PAGE = 10
 def create_app(test_config=None):
     # create and configure the app
     app = Flask(__name__)
+    db = SQLAlchemy(app)
     setup_db(app)
     
     '''
@@ -35,14 +38,16 @@ def create_app(test_config=None):
     for all available categories.
     '''
 
-    @app.route('/categories')
-    def show_categories():
-        categories = Category.query.all()
-        formatted_categories = [category.format() for category in categories]
-        return jsonify({
-            'success': True,
-            'categories': formatted_categories
-        })
+    @app.route('/categories', methods=['GET'])
+    def get_question_category():
+        try:
+            categories = {}
+            category_queried_list = Category.query.all()
+            for item in category_queried_list:
+                categories[item.id] = item.type
+        except: 
+            print(sys.exc_info())
+        return jsonify({"categories": categories, "success": True})
 
     '''
     @DONE: 
@@ -57,27 +62,33 @@ def create_app(test_config=None):
     Clicking on the page numbers should update the questions. 
     '''
 
-    @app.route('/questions')
+    @app.route('/questions', methods=['GET'])
     def retreive_questions():
-        page = request.args.get('page', 1, type=int)
-
-        questions = Question.query.all()
-        current_category = Category.query.get(1).format()
-        categories = Category.query.all()
-        categories = [category.format() for category in categories]
-
-        start = (page - 1) * QUESTIONS_PER_PAGE
-        if(start > len(questions)):
-            abort(404)
-        end = start + QUESTIONS_PER_PAGE
-
-        formatted_questions = [question.format() for question in questions[start:end]]
+        question_list_formatted = []
+        category_list_formatted = {}
+        try:
+            question_list = Question.query.order_by(db.asc(Question.id)).all()
+            category_list = Category.query.order_by(db.asc(Category.id)).all()
+            page_number = request.args.get('page', 1, type=int)
+            start = (page_number - 1) * QUESTIONS_PER_PAGE
+            end = start + QUESTIONS_PER_PAGE
+            for item in question_list:
+                temp = Question(question=item.question, answer=item.answer,
+                            category=item.category, difficulty=item.difficulty).format()
+                temp["id"] = item.id
+                question_list_formatted.append(temp)
+            if len(question_list_formatted[start:end]) == 0:
+                abort(404)
+            for item in category_list:
+                category_list_formatted[item.id] = item.type
+        except:
+            print(sys.exc_info())
         return jsonify({
-            'success':True,
-            'questions':formatted_questions,
-            'total_questions': len(questions),
-            'categories':categories,
-            'current_category': current_category
+        "questions": question_list_formatted[start:end],
+        "total_questions": len(question_list_formatted),
+        "categories": category_list_formatted,
+        "current_category": str(1),
+        "success": True
         })
 
     '''
@@ -143,20 +154,30 @@ def create_app(test_config=None):
 
     @app.route('/questions/search', methods=['POST'])
     def search_for_quesrion():
+        search_term = {}
+        searched_question_formatted = []
+        searched_category = 0
+        search_term = json.loads(request.data)
+        if search_term["searchTerm"] == '':
+            abort(404)
         try:
-            search_term = request.get_json()['search_term']
-        except:
-            abort(400)
+            searched_question = Question.query.filter_by(question = search_term["searchTerm"]).all()
+            for item in searched_question:
+                temp = Question(question=item.question, answer=item.answer, 
+                        category=item.category, difficulty=item.difficulty).format()
+                temp["id"] = item.id
+            searched_question_formatted.append(temp)
         
-        try:
-            questions = Question.query.filter(Question.question.ilike('%{}%'.format(search_term))).all()
+            if len(searched_question_formatted) != 0:
+                searched_category = searched_question_formatted[0]["category"]
         except:
-            abort(500)
-        
-        formatted_questions = [question.format() for question in questions]
+            print(sys.exc_info())
+            abort(422)
         return jsonify({
-            'success':True,
-            'questions':formatted_questions
+        "questions": searched_question_formatted,
+        "total_questions": len(searched_question_formatted),
+        "current_category": str(searched_category),
+        "success": True
         })
 
     '''
@@ -168,32 +189,28 @@ def create_app(test_config=None):
     category to be shown. 
     '''
 
-    @app.route('/categories/<int:category_id>/questions')
+    @app.route('/categories/<int:category_id>/questions', methods = ['GET'])
     def retreive_category_questions(category_id):
-        page = request.args.get('page', 1, type=int)
-
-        current_category = Category.query.get(category_id)
-        if current_category is None:
-            abort(404)
-
-        categories = Category.query.all()
-        categories = [category.format() for category in categories]
-
-        questions = Question.query.filter(Question.category == category_id).all()
-
-        start = (page - 1) * QUESTIONS_PER_PAGE
-        if(start > len(questions)):
-            abort(404)
-        end = start + QUESTIONS_PER_PAGE
-
-        formatted_questions = [question.format() for question in questions[start:end]]
+        question_list_formatted = []
+        try:
+            category_id = str(category_id)
+            question_list = db.session.query(Question).filter_by(category = category_id).order_by(db.asc(Question.id)).all()
+            if len(question_list) == 0:
+                abort(404)
+            for item in question_list:
+                temp = Question(question=item.question, answer=item.answer, 
+                            category=item.category, difficulty=item.difficulty).format()
+                temp["id"] = item.id
+                question_list_formatted.append(temp)
+        except:
+            print(sys.exc_info())
+            abort(422)
         return jsonify({
-            'success':True,
-            'questions':formatted_questions,
-            'total_questions': len(questions),
-            'current_category': current_category.format(),
-            'categories': categories
-        })
+            "questions": question_list_formatted, 
+            "total_questions": len(question_list_formatted),
+            "current_category": str(category_id),
+            "success": True
+            })
 
     '''
     @DONE: 
