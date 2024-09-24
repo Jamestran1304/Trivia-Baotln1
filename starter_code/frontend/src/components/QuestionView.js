@@ -6,8 +6,8 @@ import Search from './Search';
 import $ from 'jquery';
 
 class QuestionView extends Component {
-  constructor(){
-    super();
+  constructor(props){
+    super(props);
     this.state = {
       questions: [],
       page: 1,
@@ -23,19 +23,18 @@ class QuestionView extends Component {
 
   getQuestions = () => {
     $.ajax({
-      url: `http://127.0.0.1:5000/questions?page=${this.state.page}`, //TODO: update request URL
+      url: `/questions?page=${this.state.page}`, //TODO: update request URL
       type: "GET",
       success: (result) => {
         this.setState({
           questions: result.questions,
           totalQuestions: result.total_questions,
           categories: result.categories,
-          currentCategory: result.current_category })
-        return;
+          currentCategory: result.current_category
+        })
       },
       error: (error) => {
         alert('Unable to load questions. Please try your request again')
-        return;
       }
     })
   }
@@ -47,6 +46,7 @@ class QuestionView extends Component {
   createPagination(){
     let pageNumbers = [];
     let maxPage = Math.ceil(this.state.totalQuestions / 10)
+    console.log(this.state.totalQuestions, this.state.page)
     for (let i = 1; i <= maxPage; i++) {
       pageNumbers.push(
         <span
@@ -59,31 +59,29 @@ class QuestionView extends Component {
   }
 
   getByCategory= (id) => {
-    const ID = (Number(id)+1)
     $.ajax({
-      url: `http://127.0.0.1:5000/categories/${ID}/questions`, //TODO: update request URL
+      url: `/categories/${id}/questions`, //TODO: update request URL
       type: "GET",
       success: (result) => {
         this.setState({
           questions: result.questions,
           totalQuestions: result.total_questions,
-          currentCategory: result.current_category })
-        return;
+          currentCategory: result.current_category
+        })
       },
       error: (error) => {
         alert('Unable to load questions. Please try your request again')
-        return;
       }
     })
   }
 
   submitSearch = (searchTerm) => {
     $.ajax({
-      url: `http://127.0.0.1:5000/questions/search`,//TODO: update request URL
+      url: `/questions/search-action`, //TODO: update request URL
       type: "POST",
       dataType: 'json',
       contentType: 'application/json',
-      data: JSON.stringify({search_term: searchTerm}),
+      data: JSON.stringify({searchTerm: searchTerm}),
       xhrFields: {
         withCredentials: true
       },
@@ -92,12 +90,11 @@ class QuestionView extends Component {
         this.setState({
           questions: result.questions,
           totalQuestions: result.total_questions,
-          currentCategory: result.current_category })
-        return;
+          currentCategory: result.current_category
+        })
       },
       error: (error) => {
         alert('Unable to load questions. Please try your request again')
-        return;
       }
     })
   }
@@ -106,14 +103,13 @@ class QuestionView extends Component {
     if(action === 'DELETE') {
       if(window.confirm('are you sure you want to delete the question?')) {
         $.ajax({
-          url: `http://127.0.0.1:5000/questions/${id}`, //TODO: update request URL
+          url: `/questions/${id}`, //TODO: update request URL
           type: "DELETE",
           success: (result) => {
             this.getQuestions();
           },
           error: (error) => {
             alert('Unable to load questions. Please try your request again')
-            return;
           }
         })
       }
@@ -126,11 +122,10 @@ class QuestionView extends Component {
         <div className="categories-list">
           <h2 onClick={() => {this.getQuestions()}}>Categories</h2>
           <ul>
-            {Object.keys(this.state.categories).map((id, ) => (
-              
+            {Object.keys(this.state.categories).map((id) => (
               <li key={id} onClick={() => {this.getByCategory(id)}}>
-                {this.state.categories[id].type}
-                <img className="category" src={`${this.state.categories[id]}.svg`}/>
+                {this.state.categories[id]}
+                <img className="category" src={`${this.state.categories[id].toString().toLowerCase()}.svg`}/>
               </li>
             ))}
           </ul>
@@ -143,7 +138,7 @@ class QuestionView extends Component {
               key={q.id}
               question={q.question}
               answer={q.answer}
-              category={this.state.categories[q.category]} 
+              category={this.state.categories[q.category]}
               difficulty={q.difficulty}
               questionAction={this.questionAction(q.id)}
             />
