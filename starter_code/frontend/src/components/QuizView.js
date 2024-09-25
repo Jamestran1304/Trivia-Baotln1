@@ -22,13 +22,15 @@ class QuizView extends Component {
 
   componentDidMount(){
     $.ajax({
-      url: `/categories`, //TODO: update request URL
+      url: `http://127.0.0.1:5000/categories`, //TODO: update request URL
       type: "GET",
       success: (result) => {
         this.setState({ categories: result.categories })
+        return
       },
       error: (error) => {
         alert('Unable to load categories. Please try your request again')
+        return
       }
     })
   }
@@ -46,7 +48,7 @@ class QuizView extends Component {
     if(this.state.currentQuestion.id) { previousQuestions.push(this.state.currentQuestion.id) }
     console.log(this.state.quizCategory)
     $.ajax({
-      url: '/quizzes', //TODO: update request URL
+      url: 'http://127.0.0.1:5000/quizzes', //TODO: update request URL
       type: "POST",
       dataType: 'json',
       contentType: 'application/json',
@@ -66,9 +68,11 @@ class QuizView extends Component {
           guess: '',
           forceEnd: result.question ? false : true
         })
+        return
       },
       error: (error) => {
         alert('Unable to load question. Please try your request again')
+        return
       }
     })
   }
@@ -107,7 +111,7 @@ class QuizView extends Component {
                       key={id}
                       value={id}
                       className="play-category"
-                      onClick={() => this.selectCategory({type:this.state.categories[id], id})}>
+                      onClick={() => this.selectCategory({type:this.state.categories[id].type, id})}>
                       {this.state.categories[id]}
                     </div>
                   )
