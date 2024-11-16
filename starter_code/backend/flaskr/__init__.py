@@ -195,23 +195,42 @@ def create_app(test_config=None):
     only question that include that string within their question.
     Try using the word "title" to start.
     """
-    @app.route('/questions/search')
+    # @app.route('/questions/search')
     # http://127.0.0.1:5000/questions/search?search=What
 
+    # def search_questions():
+    #     search_term = request.args.get('search')
+    #     selection = Question.query.filter(Question.question.ilike(f'%{search_term}%')).all()
+    #     search_questions = paginate_questions(request, selection)
+    #     # question = Question.query.all()
+
+    #     if search_term == None:
+    #         abort(404)
+
+    #     return jsonify({
+    #             "success": True,
+    #             "questions": list(search_questions),
+    #             "total_questions": len(selection),
+    #         })
+
+    @app.route('/questions/search', methods=['GET'])
     def search_questions():
-        search_term = request.args.get('search')
-        selection = Question.query.filter(Question.question.ilike(f'%{search_term}%')).all()
-        search_questions = paginate_questions(request, selection)
-        # question = Question.query.all()
+        try:
+            search_term = request.get_json().get('search')
+            questions = Question.query.filter(
+                Question.question.ilike(f'%{search_term}%')).all()
+            formatted_questions = [question.format() for question in questions]
 
-        if search_term == None:
-            abort(404)
-
-        return jsonify({
-                "success": True,
-                "questions": list(search_questions),
-                "total_questions": len(selection),
-            })
+            return jsonify(
+                {
+                    'success': True,
+                    'questions': formatted_questions,
+                    'totalQuestions': len(formatted_questions),
+                    'currentCategory': None
+                }
+            )
+        except Exception as e:
+            abort(500)
 
     """
     @DONE:

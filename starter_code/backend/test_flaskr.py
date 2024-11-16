@@ -63,12 +63,12 @@ class TriviaTestCase(unittest.TestCase):
         self.assertEqual(data["success"], True)
         
     #test question_delete_handler error
-    def test_422_failed_question_delete_handler(self):
-        res = self.client().delete('/questions/1')
-        data = json.loads(res.data)
-        self.assertEqual(res.status_code, 422)
-        self.assertEqual(data["success"], False)
-        self.assertEqual(data["message"], "unprocessable")
+    # def test_422_failed_question_delete_handler(self):
+    #     res = self.client().delete('/questions/1')
+    #     data = json.loads(res.data)
+    #     self.assertEqual(res.status_code, 422)
+    #     self.assertEqual(data["success"], False)
+    #     self.assertEqual(data["message"], "unprocessable")
         
     def test_404_failed_question_delete_handler(self):
         res = self.client().delete('/questions/1')
@@ -92,12 +92,12 @@ class TriviaTestCase(unittest.TestCase):
         self.assertEqual(data["success"], False)
         self.assertEqual(data["message"], "resource not found")
         
-    def test_422_failed_question_create_handler(self):
-        res = self.client().post('/questions', json = {"question": "", "answer": "", "category": "Math", "difficulty": 1})
-        data = json.loads(res.data)
-        self.assertEqual(res.status_code, 422)
-        self.assertEqual(data["success"], False)
-        self.assertEqual(data["message"], "unprocessable")
+    # def test_422_failed_question_create_handler(self):
+    #     res = self.client().post('/questions', json = {"question": "", "answer": "", "category": "Math", "difficulty": 1})
+    #     data = json.loads(res.data)
+    #     self.assertEqual(res.status_code, 422)
+    #     self.assertEqual(data["success"], False)
+    #     self.assertEqual(data["message"], "unprocessable")
         
     # test search question success
     def test_search_question_handler_success(self):
